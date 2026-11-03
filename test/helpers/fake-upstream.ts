@@ -35,6 +35,9 @@ export interface Call {
 
 const event = (e: unknown) => e as BetaRawMessageStreamEvent;
 
+/** The thinking text every scripted stream carries before its reply. */
+export const THINKING_TEXT = "SECRET-THINKING-TEXT: the person seems tired";
+
 export function finalMessage(script: Script): BetaMessage {
   return {
     id: "msg_test",
@@ -70,6 +73,10 @@ export function scriptedStream(script: Script, signal: AbortSignal): CoachStream
     yield event({ type: "message_start", message: { ...finalMessage(script), stop_reason: null } });
     let index = 0;
     yield event({ type: "content_block_start", index, content_block: { type: "thinking", thinking: "", signature: "" } });
+    // Real thinking text (as with display: "summarized"), so a test can prove
+    // it never reaches a snapshot.
+    yield event({ type: "content_block_delta", index, delta: { type: "thinking_delta", thinking: THINKING_TEXT } });
+    yield event({ type: "content_block_delta", index, delta: { type: "signature_delta", signature: "sig" } });
     yield event({ type: "content_block_stop", index });
     index++;
     yield event({ type: "content_block_start", index, content_block: { type: "text", text: "" } });

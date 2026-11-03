@@ -154,6 +154,19 @@ describe("reply with an assertion", () => {
     expect((await handleReply(await signedReply(deps, { counter: 0 }), deps)).status).toBe(401);
   });
 
+  test("reply logs carry a short key hash, never the key id, assertion or challenge", async () => {
+    const deps = await registered();
+    const challenge = await getChallenge(deps);
+    const request = await signedReply(deps, { counter: 1, challenge });
+    const assertion = request.headers.get(HEADERS.assertion)!;
+    await readSse(await handleReply(request, deps));
+    const reply = deps.logs.filter((entry) => entry.route === "coach.reply");
+    expect(reply).toHaveLength(1);
+    expect(reply[0]?.key).toMatch(/^[0-9a-f]{12}$/);
+    const line = JSON.stringify(reply);
+    for (const leaked of [device.keyId, assertion, challenge]) expect(line).not.toContain(leaked);
+  });
+
   test("an unknown key id is attestation_failed, so the app re-attests", async () => {
     const deps = makeDeps({ roots: [device.rootPem] });
     const response = await handleReply(await signedReply(deps, { counter: 1 }), deps);

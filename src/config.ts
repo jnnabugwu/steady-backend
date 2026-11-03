@@ -44,7 +44,9 @@ const nonEmpty = (value: string | undefined): string | undefined =>
 function positiveInt(env: Env, name: string, fallback: number): number {
   const raw = nonEmpty(env[name]);
   if (raw === undefined) return fallback;
-  if (!/^\d+$/.test(raw) || Number(raw) < 1) {
+  // Digits only, and small enough to be exact: a cap that rounds (or is
+  // Infinity) could never trip.
+  if (!/^\d+$/.test(raw) || !Number.isSafeInteger(Number(raw)) || Number(raw) < 1) {
     throw new ConfigError(`${name} must be a positive whole number`);
   }
   return Number(raw);

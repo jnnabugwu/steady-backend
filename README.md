@@ -186,7 +186,7 @@ arrives as the final `error` event. **The event is authoritative**; the status i
 | `rate_limited` | `429`, with a `retry-after` header | This device's daily limit, or the global one, is used up. `retryAfter` is seconds until the next UTC midnight. | Rate-limited failure, with `retryAfter`. |
 | `attestation_failed` | `401` | Missing or bad headers; challenge unknown, used or expired; key id unknown (never registered, or expired after 180 days unused); signature, app id or counter check failed; or a bypass header where it isn't allowed. | Re-attest once (new key, new challenge, register), then retry once. If it fails again, server error. |
 | `bad_request` | `400` | Body malformed, over a limit, or breaking a conversation rule. | A bug: server error, don't retry. |
-| `upstream_unavailable` | `503` | Anthropic is overloaded (529), rate limiting (429), erroring (5xx) or unreachable, or the reply ran past the 110 s deadline. | Server error ("try again shortly"). |
+| `upstream_unavailable` | `503` | Anthropic is overloaded (529), rate limiting (429), erroring (5xx) or unreachable, or the request ran past the 110 s deadline (counted from its start). | Server error ("try again shortly"). |
 | `server_error` | `500` | Anything else: a store outage, a misconfiguration, an unexpected stop reason. | Server error. |
 | `coach_disabled` | `503` | The kill switch is off (`COACH_ENABLED` isn't `true`). Nothing was sent to Anthropic. | Show **"The coach is off right now."** Not a transport failure; no retry loop. |
 

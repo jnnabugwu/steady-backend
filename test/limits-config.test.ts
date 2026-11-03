@@ -71,6 +71,9 @@ describe("config", () => {
     expect(() => readConfig({ APP_ATTEST_ENV: "staging" })).toThrow(ConfigError);
     expect(() => readConfig({ COACH_DAILY_LIMIT: "0" })).toThrow(ConfigError);
     expect(() => readConfig({ COACH_GLOBAL_DAILY_LIMIT: "ten" })).toThrow(ConfigError);
+    // Too large to be exact (or Infinity): the cap could never trip.
+    expect(() => readConfig({ COACH_DAILY_LIMIT: "9007199254740993" })).toThrow(ConfigError);
+    expect(() => readConfig({ COACH_GLOBAL_DAILY_LIMIT: "9".repeat(400) })).toThrow(ConfigError);
   });
 });
 

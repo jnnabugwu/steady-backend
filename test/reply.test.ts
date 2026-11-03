@@ -1,8 +1,8 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { describe, expect, test } from "vitest";
 import { MAX_BODY_BYTES } from "../src/coach/request.js";
-import { handleReply, terminalEvent } from "../src/handlers/reply.js";
-import { FakeUpstream, finalMessage, httpError, streamErrorEvent, type Script } from "./helpers/fake-upstream.js";
+import { handleReply, remainingDeadlineMs, REPLY_DEADLINE_MS, terminalEvent } from "../src/handlers/reply.js";
+import { FakeUpstream, finalMessage, httpError, streamErrorEvent, THINKING_TEXT, type Script } from "./helpers/fake-upstream.js";
 import { bypassRequest, chatBody, makeDeps, readSse } from "./helpers/harness.js";
 
 const run = async (script: Script, body = chatBody()) => {
@@ -51,10 +51,14 @@ describe("streaming", () => {
     expect(deps.logs[0]).toMatchObject({ fallback: true, model: "claude-opus-5" });
   });
 
-  test("thinking blocks never reach the app", async () => {
-    // The scripted stream opens with an (omitted) thinking block.
+  test("thinking never reaches the app", async () => {
+    // The scripted stream opens with a thinking block that has text.
     const { events } = await run({ chunks: ["Hi."] });
-    expect(events.map((e) => e.event)).toEqual(["snapshot", "done"]);
+    expect(events).toEqual([
+      { event: "snapshot", data: { text: "Hi." } },
+      { event: "done", data: { stopReason: "end_turn" } },
+    ]);
+    expect(JSON.stringify(events)).not.toContain(THINKING_TEXT);
   });
 
   test.each([
@@ -215,6 +219,15 @@ describe("what's sent and what's logged", () => {
     const { deps } = await run({ failOnStart: httpError(529, "overloaded_error") });
     expect(deps.logs[0]?.upstreamError).toContain("529");
     expect(JSON.stringify(deps.logs[0])).not.toContain("upstream says no");
+  });
+});
+
+describe("deadline", () => {
+  test("counts from the request's start, so setup time comes off the stream's share", () => {
+    expect(remainingDeadlineMs(1_000, 1_000)).toBe(REPLY_DEADLINE_MS);
+    expect(remainingDeadlineMs(1_000, 16_000)).toBe(REPLY_DEADLINE_MS - 15_000);
+    expect(remainingDeadlineMs(0, REPLY_DEADLINE_MS + 5)).toBe(0);
+    expect(REPLY_DEADLINE_MS).toBeLessThan(120_000); // vercel.json maxDuration
   });
 });
 

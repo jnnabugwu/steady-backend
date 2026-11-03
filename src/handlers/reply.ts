@@ -9,11 +9,15 @@ import { checkDailyLimits } from "../rate-limit.js";
 import { classifyUpstreamError, describeUpstreamError } from "../upstream.js";
 
 /**
- * The longest a reply may run before the proxy gives up and sends
- * `error {code: "upstream_unavailable"}`: under the function's 120 s
+ * The longest a request may run, from its start, before the proxy gives up
+ * and sends `error {code: "upstream_unavailable"}`: under the function's 120 s
  * `maxDuration` (vercel.json), so the stream always ends with an event.
  */
 export const REPLY_DEADLINE_MS = 110_000;
+
+/** How long a reply's stream may still run, given when its request started. */
+export const remainingDeadlineMs = (requestStarted: number, now: number): number =>
+  Math.max(0, REPLY_DEADLINE_MS - (now - requestStarted));
 
 /**
  * What ends a reply, from the final message's `stop_reason`. Only checked
@@ -105,7 +109,7 @@ export async function handleReply(request: Request, deps: Deps): Promise<Respons
     const limit = await checkDailyLimits(deps.store(), auth.subject, deps.config, deps.now());
     if (!limit.ok) return reject("rate_limited", limit.scope, limit.retryAfter);
 
-    return await streamReply(deps, buildCoachParams(parsed.request, auth.subject), log, fields);
+    return await streamReply(deps, buildCoachParams(parsed.request, auth.subject), log, fields, started);
   } catch {
     return reject("server_error");
   }
@@ -116,14 +120,20 @@ async function streamReply(
   params: ReturnType<typeof buildCoachParams>,
   log: (status: number, extra?: Partial<LogEntry>) => void,
   fields: Partial<LogEntry>,
+  requestStarted: number,
 ): Promise<Response> {
   const started = Date.now();
   const abort = new AbortController();
   let timedOut = false;
-  const deadline = setTimeout(() => {
-    timedOut = true;
-    abort.abort();
-  }, REPLY_DEADLINE_MS);
+  // Counted from the request's start: verifying, validating and the rate
+  // limit all count against the function's maxDuration too.
+  const deadline = setTimeout(
+    () => {
+      timedOut = true;
+      abort.abort();
+    },
+    remainingDeadlineMs(requestStarted, started),
+  );
 
   const failureCode = (error: unknown): ErrorCode => {
     if (timedOut) return "upstream_unavailable";
