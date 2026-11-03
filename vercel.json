@@ -1,0 +1,8 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "api/coach/reply.ts": { "maxDuration": 120 },
+    "api/attest/challenge.ts": { "maxDuration": 10 },
+    "api/attest/register.ts": { "maxDuration": 15 }
+  }
+}
