@@ -140,6 +140,22 @@ if (global > config.globalDailyLimit) return { ok: false, scope: "global", retry
 - A global cap is a cost backstop with first-come-first-served semantics; say so instead
   of calling it fair.
 
+**Decision (2026-11-04).** Option 1 while there are three users; move to option 2 at
+about 7–10 users. I'm wary of option 3 because it means relying on Apple.
+
+**Refinements.**
+
+- Trigger on a signal you can see, not only a user count. Three users can make at most
+  3 × 60 = 180 legitimate replies a day, so any day past that is abuse, a bug or key
+  churn. Lower `COACH_GLOBAL_DAILY_LIMIT` (an environment variable, no deploy) to
+  about 250, so the backstop tracks the real bill instead of ~16 heavy users. Move to
+  option 2 when the logs show many `attest.register` 204s in a day.
+- The Apple worry is a real distinction: **offline vs. online dependency.** Today
+  attestation is verified offline against Apple's pinned root certificate
+  (`src/attest/apple-root.ts`), with no call to Apple. The risk metric would add a
+  network call to Apple on the registration path, coupling our availability to theirs.
+  If adopted: fetch it in the background and treat "Apple didn't answer" as allow.
+
 ---
 
 ## Open questions
