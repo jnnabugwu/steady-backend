@@ -150,3 +150,11 @@ vite.config.ts.timestamp-*
 
 # Vercel CLI link and pulled env
 .vercel
+
+# Guardrail eval output (evals/README.md): transcripts, reports and run state stay
+# local; _state.json (metrics and the approved harness hash) is committed.
+.claude/hillclimb/**/traces/
+.claude/hillclimb/**/progress.txt
+.claude/hillclimb/**/report.html
+.claude/hillclimb/**/state.json
+.claude/hillclimb/**/trajectory/

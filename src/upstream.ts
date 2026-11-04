@@ -26,9 +26,19 @@ export interface CoachUpstream {
  */
 export const UPSTREAM_TIMEOUT_MS = 100_000;
 
+/** One retry on connection errors, 429 and 5xx (the SDK's own backoff). */
+export const UPSTREAM_CLIENT_OPTIONS = { maxRetries: 1, timeout: UPSTREAM_TIMEOUT_MS } as const;
+
 export function anthropicUpstream(apiKey: string): CoachUpstream {
-  // One retry on connection errors, 429 and 5xx (the SDK's own backoff).
-  const client = new Anthropic({ apiKey, maxRetries: 1, timeout: UPSTREAM_TIMEOUT_MS });
+  return upstreamFrom(new Anthropic({ apiKey, ...UPSTREAM_CLIENT_OPTIONS }));
+}
+
+/**
+ * The upstream over an existing client. Production builds the client with
+ * the Console key (`anthropicUpstream`); the guardrail evals build it with
+ * `UPSTREAM_CLIENT_OPTIONS` and the developer's own credentials.
+ */
+export function upstreamFrom(client: Anthropic): CoachUpstream {
   return {
     stream: (params, signal) => client.beta.messages.stream(params, { signal }),
   };

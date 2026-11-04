@@ -13,7 +13,10 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "smoke": "tsx scripts/smoke.ts"
+    "smoke": "tsx scripts/smoke.ts",
+    "eval": "tsx evals/run-eval.mjs",
+    "eval:summary": "tsx evals/summary.ts",
+    "eval:cases": "tsx evals/print-cases.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "1.4.0",
