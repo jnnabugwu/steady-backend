@@ -145,54 +145,61 @@ if (global > config.globalDailyLimit) return { ok: false, scope: "global", retry
 ## Open questions
 
 ### Ch 1
-3. If Upstash is down, `/api/attest/challenge` returns 500 and the coach is fully
-   unavailable. Is Redis a single point of failure? Should rate limiting fail open or
-   closed when Redis is unreachable, and why?
+
+- **Q3.** If Upstash is down, `/api/attest/challenge` returns 500 and the coach is fully
+  unavailable. Is Redis a single point of failure? Should rate limiting fail open or
+  closed when Redis is unreachable, and why?
 
 ### Ch 4: Encoding and evolution
-4. The app and server share hard limits (weekContext 1,200, person turn 1,000, 100
-   turns). If I change a limit, which side ships first, and what happens to app builds
-   already installed?
-5. The body schema allows "no other fields". How do I add a new field or a new `kind`
-   without breaking old apps or an old server mid-deploy?
-6. Each SSE `snapshot` sends the whole reply so far, not a delta. What does that buy the
-   client on a flaky connection, and what does it cost in bytes as the reply grows?
-7. The assertion's clientDataHash covers the exact body bytes. What breaks if any layer
-   re-serializes the JSON?
+
+- **Q4.** The app and server share hard limits (weekContext 1,200, person turn 1,000, 100
+  turns). If I change a limit, which side ships first, and what happens to app builds
+  already installed?
+- **Q5.** The body schema allows "no other fields". How do I add a new field or a new `kind`
+  without breaking old apps or an old server mid-deploy?
+- **Q6.** Each SSE `snapshot` sends the whole reply so far, not a delta. What does that buy the
+  client on a flaky connection, and what does it cost in bytes as the reply grows?
+- **Q7.** The assertion's clientDataHash covers the exact body bytes. What breaks if any layer
+  re-serializes the JSON?
 
 ### Ch 5: Replication
-8. Upstash may serve reads from replicas. Could a challenge that GETDEL already consumed
-   still look unused on a lagging replica? What consistency does Upstash promise?
+
+- **Q8.** Upstash may serve reads from replicas. Could a challenge that GETDEL already consumed
+  still look unused on a lagging replica? What consistency does Upstash promise?
 
 ### Ch 7: Transactions and race conditions
-9. Advancing the App Attest counter is a Lua script. What exact race exists without it,
-   and what does the book call it?
-10. Why GETDEL for challenges instead of GET then DEL? Two requests, same challenge,
-    same instant.
-11. `checkDailyLimits` increments the device counter before the global check. If the
-    global cap rejects, the device still lost one of its 60. Acceptable? A fix?
-12. Quota is spent before the upstream call. If Anthropic returns 529 or the app cancels,
-    should a failed reply refund quota, and can it be done safely?
-13. Registering an existing key id replaces it and resets the counter to 0. Can anything
-    replay an old attestation to roll a counter back? What stops it?
+
+- **Q9.** Advancing the App Attest counter is a Lua script. What exact race exists without it,
+  and what does the book call it?
+- **Q10.** Why GETDEL for challenges instead of GET then DEL? Two requests, same challenge,
+  same instant.
+- **Q11.** `checkDailyLimits` increments the device counter before the global check. If the
+  global cap rejects, the device still lost one of its 60. Acceptable? A fix?
+- **Q12.** Quota is spent before the upstream call. If Anthropic returns 529 or the app cancels,
+  should a failed reply refund quota, and can it be done safely?
+- **Q13.** Registering an existing key id replaces it and resets the counter to 0. Can anything
+  replay an old attestation to roll a counter back? What stops it?
 
 ### Ch 8: Trouble with distributed systems
-14. Two concurrent requests can arrive out of order, and the older counter is rejected.
-    Is that right, and what should the app do next?
-15. The daily reset computes EXPIREAT from the function's clock; Redis enforces it by its
-    own. What if the clocks disagree near midnight?
-16. 110 s upstream deadline, 120 s function limit, 300 s challenge lifetime: why those
-    numbers? What does the app see if the platform kills the function mid-stream?
-17. How is the App Attest counter like a fencing token, and how is it different?
+
+- **Q14.** Two concurrent requests can arrive out of order, and the older counter is rejected.
+  Is that right, and what should the app do next?
+- **Q15.** The daily reset computes EXPIREAT from the function's clock; Redis enforces it by its
+  own. What if the clocks disagree near midnight?
+- **Q16.** 110 s upstream deadline, 120 s function limit, 300 s challenge lifetime: why those
+  numbers? What does the app see if the platform kills the function mid-stream?
+- **Q17.** How is the App Attest counter like a fencing token, and how is it different?
 
 ### Ch 9: Consistency
-18. The global cap is correct because every instance increments one linearizable
-    counter. What happens with multi-region Redis?
+
+- **Q18.** The global cap is correct because every instance increments one linearizable
+  counter. What happens with multi-region Redis?
 
 ### Ch 11–12: Derived data, end-to-end, ethics
-19. The phone is the only source of truth for a conversation. Reinstall or new phone:
-    deliberate privacy tradeoff or accident?
-20. The server can't dedupe a double-tapped Send, so two replies get charged. Per the
-    end-to-end argument, where should duplicate suppression live?
-21. Logs carry a 12-hex hash of the key id. Could per-device cost be rebuilt from logs
-    alone? Could someone link that hash back to a person?
+
+- **Q19.** The phone is the only source of truth for a conversation. Reinstall or new phone:
+  deliberate privacy tradeoff or accident?
+- **Q20.** The server can't dedupe a double-tapped Send, so two replies get charged. Per the
+  end-to-end argument, where should duplicate suppression live?
+- **Q21.** Logs carry a 12-hex hash of the key id. Could per-device cost be rebuilt from logs
+  alone? Could someone link that hash back to a person?
