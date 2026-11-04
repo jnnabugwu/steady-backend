@@ -10,6 +10,89 @@ Status: Q1–Q2 done. Q3–Q21 open (listed at the end).
 
 ---
 
+## System map
+
+The backend talks to exactly two services: **Upstash Redis** and **Anthropic**. It never
+calls Apple. Apple is involved in two places:
+
+- **On the phone, once per key.** `attestKey` sends the new key to Apple, which returns an
+  attestation: a certificate chain saying "this key is in a real device's Secure Enclave,
+  running app `UXZV3C926U.com.jmagic.steady`".
+- **On the server, offline.** Registration checks that chain against Apple's root
+  certificate, pinned in `src/attest/apple-root.ts`, then stores the key's public key.
+  Each reply's assertion is the phone's signature over `challenge + exact body bytes`
+  (`replyClientData`), checked with that stored public key. Plain cryptography, no call to
+  Apple.
+
+### What Redis holds
+
+No conversation text, ever. It's the backend's only memory; the functions are stateless.
+
+| Key | Value | Lifetime | Responsible for |
+| --- | --- | --- | --- |
+| `attest:challenge:<challenge>` | `"1"` | 300 s, removed on first use (GETDEL) | Replay protection: each signed request is good once |
+| `attest:key:<keyId>` | `{publicKey, counter}` | 180 days, renewed on use | Identity: which keys are genuine, last counter seen |
+| `coach:count:device:<day>:<hash>` | integer | until next UTC midnight | Per-key daily limit (60) |
+| `coach:count:global:<day>` | integer | until next UTC midnight | Global spend backstop (1,000) |
+
+### Components
+
+```mermaid
+flowchart LR
+  subgraph Phone["iPhone app"]
+    SE["Secure Enclave<br/>(private key)"]
+    Conv["Conversation<br/>(only copy)"]
+  end
+  Apple["Apple App Attest<br/>service"]
+  subgraph Vercel["Vercel functions (stateless)"]
+    Ch["GET /api/attest/challenge"]
+    Reg["POST /api/attest/register"]
+    Rep["POST /api/coach/reply"]
+  end
+  Redis[("Upstash Redis<br/>challenges · keys · counts")]
+  Anth["Anthropic API<br/>Opus 5.5"]
+  Logs["Vercel logs<br/>(one JSON line per request)"]
+
+  SE -- "attestKey (once per key)" --> Apple
+  Phone --> Ch & Reg & Rep
+  Ch -- "SET ex 300" --> Redis
+  Reg -- "GETDEL challenge, store public key" --> Redis
+  Rep -- "GETDEL, get key, counter CAS, INCR ×2" --> Redis
+  Rep -- "stream" --> Anth
+  Ch & Reg & Rep --> Logs
+```
+
+### One coach reply
+
+```mermaid
+sequenceDiagram
+  participant App as iPhone app
+  participant Fn as Vercel function
+  participant R as Upstash Redis
+  participant A as Anthropic
+
+  App->>Fn: GET /api/attest/challenge
+  Fn->>R: SET attest:challenge:<c> ex 300
+  Fn-->>App: { challenge }
+  Note over App: sign challenge + body bytes<br/>with the Secure Enclave key
+  App->>Fn: POST /api/coach/reply (keyId, assertion, challenge)
+  Note over Fn: kill switch, read body
+  Fn->>R: GETDEL challenge
+  Fn->>R: HGETALL attest:key:<keyId>
+  Note over Fn: verify signature (offline)
+  Fn->>R: EVAL counter compare-and-set
+  Note over Fn: validate body (zod)
+  Fn->>R: INCR device count, EXPIREAT
+  Fn->>R: INCR global count, EXPIREAT
+  Note over Fn: preStreamMs ends here
+  Fn->>A: messages.stream
+  A-->>Fn: text deltas
+  Fn-->>App: SSE snapshot (whole reply so far) ...
+  Fn-->>App: SSE done or error
+```
+
+---
+
 ## Ch 1: Reliability, scalability, maintainability
 
 ### Q1. Latency vs. time to first text: which is the user's experience?
