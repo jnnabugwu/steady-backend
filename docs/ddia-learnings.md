@@ -41,7 +41,7 @@ No conversation text, ever. It's the backend's only memory; the functions are st
 flowchart LR
   subgraph Phone["iPhone app"]
     SE["Secure Enclave<br/>(private key)"]
-    Conv["Conversation<br/>(only copy)"]
+    Conv["Conversation<br/>(only stored copy)"]
   end
   Apple["Apple App Attest<br/>service"]
   subgraph Vercel["Vercel functions (stateless)"]
@@ -105,7 +105,8 @@ algorithms classes teach planning for the worst case.
 **What the code says.**
 
 - Time to first text is the right metric. On a successful reply `latencyMs` ends when the
-  stream ends, so it mostly measures *how long the coach talked*, not slowness. On a
+  stream ends: it's the whole request (pre-stream work, time to first text and the
+  stream), so for a normal reply it's dominated by *how long the coach talked*. On a
   cancelled reply it measures how long the person waited before giving up.
 - **`firstTextMs` does not start when the request arrives.** `handleReply` and
   `streamReply` each declare their own `started` (`src/handlers/reply.ts`), and
@@ -149,9 +150,15 @@ both rate-limit counters, which come after it. The mark belongs right before the
 upstream call: `preStreamMs`, request arrival → `streamReply`.
 
 ```ts
-// src/handlers/reply.ts, just before streamReply (not implemented yet)
-fields.preStreamMs = Date.now() - started;
+// src/handlers/reply.ts, in streamReply (merged in #2)
+const started = Date.now();
+// Ends where firstTextMs starts, so building the prompt counts here.
+fields.preStreamMs = started - requestStarted;
 ```
+
+The first version set it in `handleReply`, before `buildCoachParams`; review caught that
+building the prompt then fell into neither field. Setting it at the instant
+`firstTextMs` starts makes the two meet exactly.
 
 | `preStreamMs` | `firstTextMs` | Diagnosis |
 | --- | --- | --- |
@@ -178,7 +185,7 @@ server warming up (a cold start). Close, with one correction:
 - A timer inside a process can't measure what happened before the process got control.
 - At low volume, read the slow requests one by one instead of trusting a high percentile.
 
-**Possible change:** add `preStreamMs` to `LogEntry` and set it before `streamReply`.
+**Done:** `preStreamMs` is in `LogEntry` (#2).
 
 ### Q2. Load parameters: whose request fails when the global cap trips?
 
@@ -230,7 +237,8 @@ about 7–10 users. I'm wary of option 3 because it means relying on Apple.
 
 - Trigger on a signal you can see, not only a user count. Three users can make at most
   3 × 60 = 180 legitimate replies a day, so any day past that is abuse, a bug or key
-  churn. Lower `COACH_GLOBAL_DAILY_LIMIT` (an environment variable, no deploy) to
+  churn. Lower `COACH_GLOBAL_DAILY_LIMIT` (an environment variable: change it, then redeploy, since Vercel applies it to new
+  deployments; no code change) to
   about 250, so the backstop tracks the real bill instead of ~16 heavy users. Move to
   option 2 when the logs show many `attest.register` 204s in a day.
 - The Apple worry is a real distinction: **offline vs. online dependency.** Today
