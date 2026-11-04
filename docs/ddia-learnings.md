@@ -6,7 +6,7 @@ proxy. Each question was answered from intuition first, then checked against the
 
 Code references are to `main` as of 2026-11-04 (after PR #1).
 
-Status: Q1–Q2 done. Q3–Q21 open (listed at the end).
+Status: Q1–Q3 done (Ch 1). Q4–Q21 open (listed at the end).
 
 ---
 
@@ -239,15 +239,51 @@ about 7–10 users. I'm wary of option 3 because it means relying on Apple.
   network call to Apple on the registration path, coupling our availability to theirs.
   If adopted: fetch it in the background and treat "Apple didn't answer" as allow.
 
+### Q3. Is Redis a single point of failure? Fail open or closed?
+
+**My answer.** With Upstash down the app gets a server error. Making only the rate limit
+fail open wouldn't let the request through.
+
+**What the code says.**
+
+- It fails even earlier than the reply. Every reply starts with
+  `GET /api/attest/challenge`, whose first act is a Redis `SET`; it throws and the
+  handler's `catch` answers `500 {"error": {"code": "server_error"}}`
+  (`src/handlers/attest.ts`). The app never reaches `/api/coach/reply`. If it had a
+  challenge, `takeChallenge` (GETDEL) would throw first and `handleReply`'s outer
+  `catch` sends `500` with one SSE `error {code: "server_error"}`.
+- The rate limit is the *fourth* thing that needs Redis:
+
+| Step | Needs Redis because… | If it failed open… |
+| --- | --- | --- |
+| `takeChallenge` | challenges live only in Redis | a captured request replays forever |
+| `getKey` | the public key lives only in Redis | the signature can't be checked at all |
+| `advanceCounter` | the last counter lives only in Redis | replays get through |
+| `checkDailyLimits` | the counts live only in Redis | no spend limit |
+
+- Failing open usefully would mean failing open on all four: **no authentication**, an
+  open proxy to the Anthropic key while Upstash is down. So Redis is a single point of
+  failure on purpose, and **fail closed** is right.
+
+**Smaller findings.**
+
+- A Redis outage is reported as `server_error` (500), lumped with bugs and
+  misconfiguration. It's transient, like Anthropic being overloaded, which gets
+  `upstream_unavailable` (503, "try again shortly"). Worth separating.
+- The blast radius is just the coach: check-ins, metrics and imports never touch this
+  backend.
+
+**Takeaways.**
+
+- For each dependency, ask whether its failure should cost **availability** or
+  **safety**. When the alternative is an open wallet, lose availability.
+- "Fail open" only makes sense if every step before it can also fail open; check what sits
+  in front of the thing you want to relax.
+
 ---
 
 ## Open questions
 
-### Ch 1
-
-- **Q3.** If Upstash is down, `/api/attest/challenge` returns 500 and the coach is fully
-  unavailable. Is Redis a single point of failure? Should rate limiting fail open or
-  closed when Redis is unreachable, and why?
 
 ### Ch 4: Encoding and evolution
 
