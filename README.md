@@ -365,7 +365,9 @@ counts.
 One JSON line per request (`src/log.ts`), with a fixed set of fields: route, HTTP status,
 latency, error code and reason (from fixed lists), `kind`, a 12-hex-char hash of the key id
 (or `dev-bypass`), `stopReason`, refusal category, the serving model and whether a fallback
-ran, input / output / cache-read / cache-write token counts, time to first text, an
+ran, input / output / cache-read / cache-write token counts, the time before calling
+Anthropic (`preStreamMs`: body, Redis and verification) and from then to the first text
+(`firstTextMs`), an
 upstream error's class and status, and whether the app cancelled.
 
 **Never logged:** request or response bodies, the week context, turns, reply text, the raw

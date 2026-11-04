@@ -26,7 +26,13 @@ export interface LogEntry {
   outputTokens?: number;
   cacheReadTokens?: number;
   cacheWriteTokens?: number;
-  /** Time to the first snapshot. */
+  /**
+   * From the request's start to calling Anthropic: reading the body, Redis
+   * (challenge, key, counter, daily counts) and verification. With
+   * `firstTextMs`, splits a slow start between the proxy and Anthropic.
+   */
+  preStreamMs?: number;
+  /** From calling Anthropic to the first snapshot. */
   firstTextMs?: number;
   /** The upstream error's class and status, e.g. `RateLimitError 429`. */
   upstreamError?: string;
