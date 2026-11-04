@@ -210,6 +210,19 @@ describe("what's sent and what's logged", () => {
     });
   });
 
+  test("a streamed reply logs the time before Anthropic and to the first text", async () => {
+    const { deps } = await run({ chunks: ["Hi."] });
+    expect(deps.logs[0]?.preStreamMs).toBeGreaterThanOrEqual(0);
+    expect(deps.logs[0]?.firstTextMs).toBeGreaterThanOrEqual(0);
+  });
+
+  test("a request refused before Anthropic logs no preStreamMs", async () => {
+    const deps = makeDeps({ upstream: new FakeUpstream({ chunks: ["Hi."] }) });
+    await readSse(await handleReply(bypassRequest("{"), deps));
+    expect(deps.logs[0]).toMatchObject({ code: "bad_request" });
+    expect(deps.logs[0]?.preStreamMs).toBeUndefined();
+  });
+
   test("a refusal logs its category", async () => {
     const { deps } = await run({ chunks: [], stopReason: "refusal", refusalCategory: "bio" });
     expect(deps.logs[0]).toMatchObject({ code: "refusal", stopReason: "refusal", refusalCategory: "bio" });

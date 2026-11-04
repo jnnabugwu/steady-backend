@@ -123,6 +123,8 @@ async function streamReply(
   requestStarted: number,
 ): Promise<Response> {
   const started = Date.now();
+  // Ends where firstTextMs starts, so building the prompt counts here.
+  fields.preStreamMs = started - requestStarted;
   const abort = new AbortController();
   let timedOut = false;
   // Counted from the request's start: verifying, validating and the rate
