@@ -5,6 +5,7 @@ import { encode } from "cborg";
 import { AAGUID } from "../../src/attest/auth-data.js";
 import { sha256, toBase64, utf8 } from "../../src/attest/bytes.js";
 import { APPLE_NONCE_OID } from "../../src/attest/der.js";
+import { TEST_NOW } from "./harness.js";
 
 /**
  * Builds App Attest attestations and assertions the way an iPhone does, but
@@ -79,8 +80,8 @@ export interface AttestFixture {
 const dayMs = 24 * 60 * 60 * 1000;
 
 export async function createAttestFixture(): Promise<AttestFixture> {
-  const notBefore = new Date(Date.now() - dayMs);
-  const notAfter = new Date(Date.now() + 365 * dayMs);
+  const notBefore = new Date(TEST_NOW.getTime() - dayMs);
+  const notAfter = new Date(TEST_NOW.getTime() + 365 * dayMs);
 
   const rootKeys = await ecKeys("P-384");
   const root = await x509.X509CertificateGenerator.createSelfSigned({

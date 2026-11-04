@@ -7,6 +7,7 @@ import { AAGUID, parseAuthData } from "../src/attest/auth-data.js";
 import { fromBase64, toBase64, utf8 } from "../src/attest/bytes.js";
 import { readAppleNonce } from "../src/attest/der.js";
 import { buildAuthData, createAttestFixture, nonceExtensionValue, TEST_APP_ID, type AttestFixture } from "./helpers/attest-fixtures.js";
+import { TEST_NOW } from "./helpers/harness.js";
 
 const CHALLENGE = "A".repeat(43);
 
@@ -24,7 +25,7 @@ const input = async (overrides: Partial<AttestationInput> = {}, attestationOverr
   appId: TEST_APP_ID,
   env: "development",
   roots: [device.rootPem],
-  now: new Date(),
+  now: TEST_NOW,
   ...overrides,
 });
 
@@ -76,7 +77,7 @@ describe("attestation", () => {
   });
 
   test("an expired credential certificate fails", async () => {
-    expect(await reasonFor({ now: new Date(Date.now() + 400 * 24 * 3600 * 1000) })).toBe("expired");
+    expect(await reasonFor({ now: new Date(TEST_NOW.getTime() + 400 * 24 * 3600 * 1000) })).toBe("expired");
   });
 
   test("a different challenge fails the nonce", async () => {

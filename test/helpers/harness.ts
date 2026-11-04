@@ -4,6 +4,12 @@ import type { LogEntry } from "../../src/log.js";
 import { MemoryStore } from "../../src/store/memory.js";
 import { FakeUpstream } from "./fake-upstream.js";
 
+/**
+ * The one clock every test runs on. Fixture certificates are dated from it
+ * too: dating them from the real clock let them drift out of validity.
+ */
+export const TEST_NOW = new Date("2026-11-02T12:00:00Z");
+
 /** Deps for a handler under test: in-memory store, scripted upstream, captured logs. */
 export interface TestDeps extends Deps {
   memory: MemoryStore;
@@ -26,7 +32,7 @@ export function testConfig(env: Record<string, string> = {}): Config {
 export function makeDeps(
   options: { env?: Record<string, string>; upstream?: FakeUpstream; roots?: string[]; now?: Date } = {},
 ): TestDeps {
-  const clock = { now: options.now ?? new Date("2026-11-02T12:00:00Z") };
+  const clock = { now: options.now ?? TEST_NOW };
   const memory = new MemoryStore(() => clock.now.getTime());
   const fake = options.upstream ?? new FakeUpstream();
   const logs: LogEntry[] = [];
