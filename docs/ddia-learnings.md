@@ -72,13 +72,13 @@ sequenceDiagram
   participant A as Anthropic
 
   App->>Fn: GET /api/attest/challenge
-  Fn->>R: SET attest:challenge:<c> ex 300
+  Fn->>R: SET attest:challenge:{c} ex 300
   Fn-->>App: { challenge }
   Note over App: sign challenge + body bytes<br/>with the Secure Enclave key
   App->>Fn: POST /api/coach/reply (keyId, assertion, challenge)
   Note over Fn: kill switch, read body
   Fn->>R: GETDEL challenge
-  Fn->>R: HGETALL attest:key:<keyId>
+  Fn->>R: HGETALL attest:key:{keyId}
   Note over Fn: verify signature (offline)
   Fn->>R: EVAL counter compare-and-set
   Note over Fn: validate body (zod)
