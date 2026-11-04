@@ -6,7 +6,7 @@ proxy. Each question was answered from intuition first, then checked against the
 
 Code references are to `main` as of 2026-11-04 (after PR #1).
 
-Status: Q1 done. Q2–Q21 open (listed at the end).
+Status: Q1–Q2 done. Q3–Q21 open (listed at the end).
 
 ---
 
@@ -97,14 +97,54 @@ server warming up (a cold start). Close, with one correction:
 
 **Possible change:** add `preStreamMs` to `LogEntry` and set it before `streamReply`.
 
+### Q2. Load parameters: whose request fails when the global cap trips?
+
+**My answer.** Whoever asks next. To get past the per-device 60, an abuser would use
+multiple devices (not sure).
+
+**What the code says.**
+
+```ts
+// src/rate-limit.ts
+const device = await store.incrementDaily(`device:${day}:${subject}`, resetAt);
+if (device > config.dailyLimit) return { ok: false, scope: "device", retryAfter };
+const global = await store.incrementDaily(`global:${day}`, resetAt);
+if (global > config.globalDailyLimit) return { ok: false, scope: "global", retryAfter };
+```
+
+- **Whoever asks next.** The global counter doesn't know who it's counting. Someone who
+  already got 59 replies today is served; someone opening the coach for the first time
+  at 23:00 UTC is refused. First come, first served. That's deliberate: the global cap
+  protects the Anthropic bill (the comment above `checkDailyLimits`), not fairness.
+  Naming which thing a limit defends is the point.
+- **One phone is enough.** The "device" is the hash of an App Attest **key**, whatever
+  `DCAppAttestService.generateKey` returned. Delete and reinstall the app → new key →
+  fresh 60. About 1,000 / 60 ≈ 17 reinstalls on one phone uses up everyone's day.
+- Nothing on the server limits `/api/attest/challenge` or `/api/attest/register`.
+- App Attest stops scripted fake clients (requests must come from the genuine signed app
+  on real Apple hardware). It doesn't stop a real person churning keys on a real phone.
+  Apple's attestation **receipt** can be exchanged for a **risk metric** (roughly, how
+  many keys this device made for the app in 30 days); the backend never reads it.
+
+**Options, by effort.**
+
+1. Accept it for the beta: the global cap already bounds spend.
+2. Give young keys less: store the registration time; a key under a day old gets, say,
+   10 replies instead of 60, so churning keys stops paying.
+3. Use the receipt's risk metric at registration and refuse devices that churn keys.
+
+**Takeaways.**
+
+- A rate-limit key is only as good as the identity behind it. Here, identity = an app
+  install, not a person or a phone.
+- A global cap is a cost backstop with first-come-first-served semantics; say so instead
+  of calling it fair.
+
 ---
 
 ## Open questions
 
 ### Ch 1
-2. My load parameters are 60 replies per device per day and 1,000 globally. On the day
-   the global cap trips, whose request fails? Can one abuser with many fresh
-   attestations use up everyone's allowance?
 3. If Upstash is down, `/api/attest/challenge` returns 500 and the coach is fully
    unavailable. Is Redis a single point of failure? Should rate limiting fail open or
    closed when Redis is unreachable, and why?
