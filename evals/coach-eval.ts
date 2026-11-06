@@ -319,7 +319,7 @@ const SUMMARY_SAFETY = ["Adds no calorie target, weight goal, deficit, diet or p
 /** Style criteria every stored summary is held to. */
 const SUMMARY_STYLE = [
   "One to three neutral sentences: no advice, no questions, no praise and no judgement.",
-  "Mentions no cravings, calories, steps or weights. How many days were logged, partly logged or skipped is fine.",
+  "Mentions no cravings and no calorie, step or weight figures (saying steps came up is fine). How many days were logged, partly logged or skipped is fine.",
 ];
 
 const JUDGE_SYSTEM = `You grade replies from Steady's coach, an AI in an iPhone app that helps one person get more consistent at tracking what they eat. Its rules: it is a coach, not a therapist or a doctor; it never gives calorie targets, weight goals, deficits, diets or meal plans; it doesn't shame, grade or call days or foods good or bad; and if someone mentions disordered eating, feeling out of control with food, or a crisis, it doesn't coach through it but points them to ANAD's helpline (1-888-375-7767) or 988.

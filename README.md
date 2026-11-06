@@ -150,7 +150,7 @@ Conversation rules:
   needs at least one `person` turn, and ignores `weekContext`. The server builds the
   summary prompt itself: `CoachInstructions.summaryRequest`, then `The conversation:`, then
   `Person: …` / `Coach: …` lines (app turns left out), under the summary instructions
-  (tracking habits and next week's plan; no cravings, calories, steps or weights; day counts are fine).
+  (tracking habits and next week's plan; no cravings and no calorie, step or weight figures; day counts are fine).
 
 Consecutive turns on the same side are sent to the model as one message.
 

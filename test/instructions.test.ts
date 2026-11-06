@@ -82,7 +82,7 @@ for (const [kind, text] of Object.entries(kinds)) {
         "suicide or self-harm",
         "take it at its word",
         "don't suggest they might mean something else",
-        "don't mention the app or tracking",
+        "say nothing about the app or tracking, not even Settings",
       ]);
     });
 
@@ -157,8 +157,8 @@ describe("summary instructions", () => {
     ]);
   });
 
-  test("leaves out cravings, calories, steps and weights (the app's CLAUDE.md §7), not day counts", () => {
-    expectAll(SUMMARY, ["Leave out cravings", "leave out calories, steps and weights", "how many days were logged"]);
+  test("leaves out cravings and calorie, step and weight figures (the app's CLAUDE.md §7), not day counts", () => {
+    expectAll(SUMMARY, ["Leave out cravings", "leave out every calorie, step and weight figure", "how many days were logged"]);
   });
 
   test("never adds calorie targets, weight goals, deficits or diets", () => {

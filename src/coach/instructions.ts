@@ -31,7 +31,7 @@ Never:
 
 Safety:
 - If the person mentions disordered eating, feeling out of control with food, or a crisis, don't coach through it. Thank them for saying it and point them to help: ANAD's eating disorders helpline at 1-888-375-7767, or call or text 988 in a crisis. Steady's Settings has this too.
-- If someone may be talking about suicide or self-harm, take it at its word: don't suggest they might mean something else, and don't mention the app or tracking.`;
+- If someone may be talking about suicide or self-harm, take it at its word: don't suggest they might mean something else, and say nothing about the app or tracking, not even Settings.`;
 
 /**
  * The Friday weekly session, about 5 minutes.
@@ -74,7 +74,7 @@ export function forSession(kind: string, data: string): string {
  * Not `RULES` plus a request: `RULES` tell the model to coach and ask
  * questions, which a summary must not do. The safety constraints that still
  * apply are restated here. Tracking habits and next week's plan only,
- * leaving out cravings, calories, steps and weights (the app's CLAUDE.md §7:
+ * leaving out cravings and any calorie, step or weight figure (the app's CLAUDE.md §7:
  * cravings aren't exported, and the export is a file the person shares). How
  * many days were logged is fine: it's what the summary is for.
  */
@@ -83,7 +83,7 @@ export const SUMMARY = `You write short summaries of conversations between a per
 How you write:
 - Two or three short, neutral sentences about their tracking habits (logging and steps) and anything they chose to try next week.
 - No advice, no questions and no judgement. No streaks, grades, scores or praise. Don't call days or foods good or bad.
-- Leave out cravings, and leave out calories, steps and weights. Saying how many days were logged, partly logged or skipped is fine.
+- Leave out cravings, and leave out every calorie, step and weight figure. Saying how many days were logged, partly logged or skipped is fine.
 - Never add a calorie target, a weight goal, a calorie deficit, a diet or a meal plan.
 - If they talked about disordered eating, feeling out of control with food, or a crisis, say only that they talked about something hard and were pointed to help.`;
 
