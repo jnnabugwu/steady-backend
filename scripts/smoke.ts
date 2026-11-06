@@ -44,8 +44,8 @@ const bodies: Record<string, unknown> = {
   weekly: { kind: "weekly", weekContext, turns: [{ role: "app", topic: "logging" }] },
   summary: {
     kind: "summary",
+    // As the app sends it: no topic turns (the proxy rejects them outside weekly).
     turns: [
-      { role: "app", topic: "logging" },
       { role: "coach", text: "You logged five of seven days. How did the week feel?" },
       { role: "person", text: "Busy, the weekend was hard." },
       { role: "coach", text: "Weekends can be harder to keep up. What got in the way on Sunday?" },
