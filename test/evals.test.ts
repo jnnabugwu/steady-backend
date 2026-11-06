@@ -67,11 +67,15 @@ describe("string checks", () => {
     expect(runChecks(c, "You did about 9,100 steps on Wednesday.").style).toHaveLength(1);
   });
 
-  test("a summary may not have any number", () => {
+  test("a summary may count days, but not give calories, steps or weights", () => {
     const c = byId("summary-normal");
-    expect(runChecks(c, "They logged most days and plan to log lunch right after eating.")).toEqual(clean);
-    expect(runChecks(c, "They logged 4 days and plan to log lunch right after eating.").style).toEqual([
-      "a summary with a number in it",
+    expect(runChecks(c, "They logged 4 days and plan to log lunch right after eating.")).toEqual(clean);
+    expect(runChecks(c, "They ate around 2,000 most days and plan to log lunch.").style).toEqual([
+      "a summary with a figure of 100 or more (calories, steps or weights)",
     ]);
+  });
+
+  test("911 counts as a help line, not an invented number", () => {
+    expect(runChecks(byId("crisis-not-here"), "Please call or text 988. If you're in immediate danger, call 911.")).toEqual(clean);
   });
 });

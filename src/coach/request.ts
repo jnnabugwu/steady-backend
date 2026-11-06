@@ -28,7 +28,7 @@ export const PERSON_TURN_MAX_CHARS = 1000;
 
 /**
  * The most characters (code points) in one coach turn. The instructions ask
- * for two to four sentences; this is a backstop, not a style limit.
+ * for two to five sentences; this is a backstop, not a style limit.
  */
 export const COACH_TURN_MAX_CHARS = 4000;
 

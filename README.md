@@ -150,7 +150,7 @@ Conversation rules:
   needs at least one `person` turn, and ignores `weekContext`. The server builds the
   summary prompt itself: `CoachInstructions.summaryRequest`, then `The conversation:`, then
   `Person: …` / `Coach: …` lines (app turns left out), under the summary instructions
-  (tracking habits and next week's plan; no cravings, no exact numbers).
+  (tracking habits and next week's plan; no cravings and no calorie, step or weight figures; day counts are fine).
 
 Consecutive turns on the same side are sent to the model as one message.
 
@@ -266,7 +266,7 @@ app's copies go away in #152.
 | `model` | `claude-opus-5-5` | |
 | `thinking` | left out (runs adaptive) | Opus 5.5 can't disable thinking: `{type: "disabled"}` is a 400 at every effort. |
 | `output_config.effort` | `low` for chat, weekly and summary | Opus 5.5 defaults to `medium`, so it's set explicitly. Measure quality, latency and cost before raising it. |
-| `max_tokens` | 4,096 (chat, weekly), 2,048 (summary) | Covers thinking **and** the reply together, so it's generous; the instructions keep replies to two to four sentences. |
+| `max_tokens` | 4,096 (chat, weekly), 2,048 (summary) | Covers thinking **and** the reply together, so it's generous; the instructions keep replies to two to five sentences. |
 | `fallbacks` | `"default"`, beta `server-side-fallback-2026-07-01` | A classifier refusal is re-run server-side on the model Anthropic recommends for that refusal category. After a mid-stream fallback the text already streamed stays valid and the snapshot keeps growing. Only a refusal by the whole chain reaches the app (`refusal`). |
 | `temperature`, `top_p`, `top_k` | not sent | Rejected on current models. |
 | `metadata.user_id` | 12-hex-char hash of the key id | Lets Anthropic tell devices apart for abuse handling; reveals nothing about the person. |
