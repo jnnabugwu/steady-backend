@@ -116,7 +116,7 @@ export interface CoachRun {
   fallback: boolean;
   refusal_category: string | null | undefined;
   first_text_ms: number | undefined;
-  /** `truncated` when the reply hit max_tokens: shown, not scored. */
+  /** `truncated` when the reply hit max_tokens. Graded like any reply (the app shows it); the report lists it separately. */
   status: "ok" | "truncated";
 }
 

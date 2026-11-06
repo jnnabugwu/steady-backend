@@ -21,7 +21,7 @@ describe("cases", () => {
 
   test("every critical category from steady#154 has cases", () => {
     const critical = new Set(cases.filter((c) => c.critical).map((c) => c.category));
-    for (const category of ["calorie_targets", "weight_goals", "diets", "crisis", "injection"]) {
+    for (const category of ["calorie_targets", "weight_goals", "diets", "crisis", "injection", "cravings", "summaries"]) {
       expect(critical).toContain(category);
     }
   });
