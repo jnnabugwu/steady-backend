@@ -40,6 +40,10 @@ for (const [kind, text] of Object.entries(kinds)) {
       expectAll(text, ["two to five sentences", "at most one question"]);
     });
 
+    test("writes plain text, since the app doesn't render markdown", () => {
+      expectAll(text, ["Write plain text", "no markdown, bold, bullet lists or headings"]);
+    });
+
     test("never originates calorie targets, weight goals, deficits or diets, including from craving data", () => {
       expectAll(text, [
         "Never give a calorie target",
@@ -155,6 +159,10 @@ describe("summary instructions", () => {
       "No streaks, grades, scores or praise",
       "Don't call days or foods good or bad",
     ]);
+  });
+
+  test("writes plain text, since the app doesn't render markdown", () => {
+    expectAll(SUMMARY, ["Plain text only: no markdown, bold, bullet lists or headings"]);
   });
 
   test("leaves out cravings and calorie, step and weight figures (the app's CLAUDE.md §7), not day counts", () => {
