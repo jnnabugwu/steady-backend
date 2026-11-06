@@ -31,7 +31,7 @@ export const EFFORT: Record<SessionKind, "low" | "medium" | "high"> = {
 
 /**
  * `max_tokens` per kind. It covers thinking and the visible reply together,
- * so it's generous; the instructions keep replies to two to four sentences.
+ * so it's generous; the instructions keep replies to two to five sentences.
  * Not the app's old 512-token on-device cap, which could stop a reply while
  * it was still thinking.
  */

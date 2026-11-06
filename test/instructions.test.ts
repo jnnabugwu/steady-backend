@@ -37,7 +37,7 @@ for (const [kind, text] of Object.entries(kinds)) {
     });
 
     test("keeps replies short, with at most one question", () => {
-      expectAll(text, ["two to four sentences", "at most one question"]);
+      expectAll(text, ["two to five sentences", "at most one question"]);
     });
 
     test("never originates calorie targets, weight goals, deficits or diets, including from craving data", () => {
@@ -74,6 +74,15 @@ for (const [kind, text] of Object.entries(kinds)) {
         "ANAD",
         "1-888-375-7767",
         "call or text 988",
+      ]);
+    });
+
+    test("takes possible suicide or self-harm at its word, without offering another meaning or mentioning the app", () => {
+      expectAll(text, [
+        "suicide or self-harm",
+        "take it at its word",
+        "don't suggest they might mean something else",
+        "don't mention the app or tracking",
       ]);
     });
 
@@ -148,8 +157,8 @@ describe("summary instructions", () => {
     ]);
   });
 
-  test("leaves out cravings and exact numbers (the app's CLAUDE.md §7)", () => {
-    expectAll(SUMMARY, ["Leave out cravings", "Leave out exact numbers", "no calories, steps, weights or counts"]);
+  test("leaves out cravings, calories, steps and weights (the app's CLAUDE.md §7), not day counts", () => {
+    expectAll(SUMMARY, ["Leave out cravings", "leave out calories, steps and weights", "how many days were logged"]);
   });
 
   test("never adds calorie targets, weight goals, deficits or diets", () => {
