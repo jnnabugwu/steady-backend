@@ -1,6 +1,6 @@
 import { createPublicKey, verify } from "node:crypto";
 import { decode } from "cborg";
-import { parseAuthData } from "./auth-data.js";
+import { parseAssertionAuthData } from "./auth-data.js";
 import { equalBytes, sha256, utf8 } from "./bytes.js";
 
 /**
@@ -52,7 +52,7 @@ export function verifyAssertion(input: AssertionInput): AssertionResult {
     return { ok: false, reason: "format" };
   }
 
-  const parsed = parseAuthData(authenticatorData);
+  const parsed = parseAssertionAuthData(authenticatorData);
   if (parsed === null) return { ok: false, reason: "auth_data" };
   if (!equalBytes(parsed.rpIdHash, sha256(utf8(input.appId)))) return { ok: false, reason: "rp_id" };
 
