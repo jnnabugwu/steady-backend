@@ -29,8 +29,8 @@ Confirmed after #8: a full weekly session from the phone, eight `weekly` replies
 
 1. **What the screen said.** "The coach couldn't reply just now." is `CoachServerFailure`.
    The availability check had passed, so the build had a proxy URL and App Attest was
-   supported. Every path to that failure fetches a challenge first, so the requests had to
-   be reaching Vercel.
+   supported. Every path first requests a challenge, but that alone doesn't establish that
+   Vercel received it; the production logs confirmed the requests reached the server.
 2. **Production logs, from the CLI:**
    `vercel logs --project steady-backend --environment production --since 30m --expand`.
    Each request writes one metadata-only JSON line. The sequence `unknown_key` → `register
