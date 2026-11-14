@@ -178,6 +178,8 @@ describe("reply with an assertion", () => {
     const deps = await registered();
     const request = await signedReply(deps, { counter: 1, signBody: chatBody({ kind: "weekly" }) });
     expect((await handleReply(request, deps)).status).toBe(401);
+    // The log names the check that failed, from a fixed set.
+    expect(deps.logs.at(-1)).toMatchObject({ code: "attestation_failed", reason: "assertion_signature" });
   });
 
   test("an assertion signed by another key is rejected", async () => {

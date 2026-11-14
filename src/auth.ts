@@ -1,5 +1,5 @@
 import { timingSafeEqual } from "node:crypto";
-import { replyClientData, verifyAssertion } from "./attest/assertion.js";
+import { type AssertionFailure, replyClientData, verifyAssertion } from "./attest/assertion.js";
 import { fromBase64, sha256, shortHash, utf8 } from "./attest/bytes.js";
 import type { Config } from "./config.js";
 import type { Deps } from "./deps.js";
@@ -26,7 +26,8 @@ export type AuthFailure =
   | "bad_headers"
   | "challenge"
   | "unknown_key"
-  | "assertion"
+  /** The assertion didn't verify; the suffix is which check failed (`AssertionFailure`). */
+  | `assertion_${AssertionFailure}`
   | "counter"
   | "bypass_in_production"
   | "bypass_not_configured"
@@ -101,7 +102,7 @@ export async function authenticateReply(request: Request, body: Uint8Array, deps
     publicKeySpki,
     appId: deps.config.appId,
   });
-  if (!verified.ok) return { ok: false, reason: "assertion" };
+  if (!verified.ok) return { ok: false, reason: `assertion_${verified.reason}` };
 
   const advanced = await store.advanceCounter(keyId, verified.counter, KEY_TTL_SECONDS);
   if (advanced === "unknown") return { ok: false, reason: "unknown_key" };
