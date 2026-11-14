@@ -20,6 +20,20 @@ const challengeKey = (challenge: string) => `attest:challenge:${challenge}`;
 const keyKey = (keyId: string) => `attest:key:${keyId}`;
 const dailyKey = (key: string) => `coach:count:${key}`;
 
+/**
+ * A hash read with HGETALL, as field → value. Takes the flat array Upstash
+ * returns with automaticDeserialization off (empty for a missing key), or an
+ * object, in case a client version converts it after all.
+ */
+function fieldsOf(reply: unknown): Record<string, unknown> {
+  if (Array.isArray(reply)) {
+    const fields: Record<string, unknown> = {};
+    for (let i = 0; i + 1 < reply.length; i += 2) fields[String(reply[i])] = reply[i + 1];
+    return fields;
+  }
+  return typeof reply === "object" && reply !== null ? (reply as Record<string, unknown>) : {};
+}
+
 /** `ProxyStore` on Upstash Redis, over its REST API. */
 export class UpstashStore implements ProxyStore {
   private readonly redis: Redis;
@@ -47,8 +61,10 @@ export class UpstashStore implements ProxyStore {
   }
 
   async getKey(keyId: string): Promise<StoredKey | null> {
-    const hash = await this.redis.hgetall<Record<string, string>>(keyKey(keyId));
-    if (hash === null || typeof hash.publicKey !== "string" || hash.counter === undefined) return null;
+    // With automaticDeserialization off, HGETALL skips its own conversion too
+    // and returns Redis's flat [field, value, field, value, ...] array.
+    const hash = fieldsOf(await this.redis.hgetall(keyKey(keyId)));
+    if (typeof hash.publicKey !== "string" || typeof hash.counter !== "string") return null;
     const counter = Number(hash.counter);
     if (!Number.isSafeInteger(counter)) return null;
     return { publicKey: hash.publicKey, counter };
