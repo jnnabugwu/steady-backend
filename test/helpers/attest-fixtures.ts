@@ -72,7 +72,11 @@ export interface AttestFixture {
   keyIdBytes: Uint8Array;
   publicKeySpki: Uint8Array;
   attestation(challenge: string, overrides?: AttestationOverrides): Promise<Uint8Array>;
-  assertion(clientData: Uint8Array, counter: number, overrides?: { appId?: string; signer?: AttestFixture }): Uint8Array;
+  assertion(
+    clientData: Uint8Array,
+    counter: number,
+    overrides?: { appId?: string; flags?: number; signer?: AttestFixture },
+  ): Uint8Array;
   /** Internal: the CA pieces, so another fixture can borrow this chain. */
   ca: { root: x509.X509Certificate; intermediate: x509.X509Certificate; intermediateKeys: KeyPair };
 }
@@ -156,7 +160,7 @@ export async function createAttestFixture(): Promise<AttestFixture> {
     },
 
     assertion(clientData, counter, overrides = {}) {
-      const authenticatorData = buildAuthData({ attested: false, counter, appId: overrides.appId });
+      const authenticatorData = buildAuthData({ attested: false, counter, appId: overrides.appId, flags: overrides.flags });
       const nonce = sha256(authenticatorData, sha256(clientData));
       const signer = overrides.signer;
       const signature = signer

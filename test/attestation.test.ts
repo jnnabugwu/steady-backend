@@ -1,4 +1,5 @@
 import { createHash, X509Certificate } from "node:crypto";
+import { encode } from "cborg";
 import { beforeAll, describe, expect, test } from "vitest";
 import { APPLE_APP_ATTEST_ROOT_PEM, APPLE_APP_ATTEST_ROOT_SHA256 } from "../src/attest/apple-root.js";
 import { replyClientData, verifyAssertion } from "../src/attest/assertion.js";
@@ -153,6 +154,19 @@ describe("assertion", () => {
 
   test("another app's RP ID fails", () => {
     expect(verify(device.assertion(clientData, 1, { appId: "other.app" }))).toEqual({ ok: false, reason: "rp_id" });
+  });
+
+  test("passes with the attested-data flag set on its 37 bytes, as Apple's assertions may have", () => {
+    // Seen from TestFlight build 1.0.0 (7): the WebAuthn-style parser read the
+    // 0x40 flag, looked for credential data an assertion doesn't carry, and
+    // failed every reply with auth_data.
+    expect(verify(device.assertion(clientData, 3, { flags: 0x40 }))).toEqual({ ok: true, counter: 3 });
+    expect(verify(device.assertion(clientData, 4, { flags: 0x45 }))).toEqual({ ok: true, counter: 4 });
+  });
+
+  test("authenticator data shorter than 37 bytes fails", () => {
+    const short = encode({ signature: new Uint8Array(70), authenticatorData: new Uint8Array(36) });
+    expect(verify(short)).toEqual({ ok: false, reason: "auth_data" });
   });
 
   test("bytes that aren't CBOR fail", () => {

@@ -37,6 +37,19 @@ export function parseAuthData(bytes: Uint8Array): AuthData | null {
   return data;
 }
 
+/**
+ * An assertion's authenticator data: only the fixed 37-byte header (RP ID
+ * hash, flags, counter), whatever the flags say. Apple's assertions can have
+ * the attested-credential-data flag set without carrying that data, so
+ * `parseAuthData` would reject them; an assertion's checks need only the
+ * header.
+ */
+export function parseAssertionAuthData(bytes: Uint8Array): AuthData | null {
+  if (bytes.length < 37) return null;
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  return { rpIdHash: bytes.subarray(0, 32), flags: view.getUint8(32), counter: view.getUint32(33) };
+}
+
 /** App Attest's AAGUIDs: which environment a key was made in. */
 export const AAGUID = {
   // "appattestdevelop"
