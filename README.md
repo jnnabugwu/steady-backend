@@ -269,7 +269,7 @@ app's copies go away in #152.
 | `max_tokens` | 4,096 (chat, weekly), 2,048 (summary) | Covers thinking **and** the reply together, so it's generous; the instructions keep replies to two to five sentences. |
 | `fallbacks` | `"default"`, beta `server-side-fallback-2026-07-01` | A classifier refusal is re-run server-side on the model Anthropic recommends for that refusal category. After a mid-stream fallback the text already streamed stays valid and the snapshot keeps growing. Only a refusal by the whole chain reaches the app (`refusal`). |
 | `temperature`, `top_p`, `top_k` | not sent | Rejected on current models. |
-| `metadata.user_id` | 12-hex-char hash of the key id | Lets Anthropic tell devices apart for abuse handling; reveals nothing about the person. |
+| `metadata` | not sent | No `user_id`: Anthropic keeps inputs and outputs up to 30 days, and a stable per-device id with them would make the week's Health data "linked to the user" on Steady's App Privacy label. Adding one back means changing that answer to "Linked to you" first. |
 | Client | `@anthropic-ai/sdk`, `client.beta.messages.stream`, 1 retry, 100 s timeout | |
 
 Stop reasons: `end_turn` → `done end_turn`; `max_tokens` → `done max_tokens`; `refusal` →

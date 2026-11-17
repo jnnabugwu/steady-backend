@@ -174,7 +174,7 @@ async function readEvents(response: Response): Promise<{ event: string; data: Re
 function sentTranscript(c: EvalCase): CoachRun["transcript"] {
   const parsed = parseCoachRequest(c.body);
   if (!parsed.ok) throw new Error(`${c.id}: body rejected`);
-  const params = buildCoachParams(parsed.request, "eval");
+  const params = buildCoachParams(parsed.request);
   const system = Array.isArray(params.system) ? params.system.map((b) => b.text).join("\n\n") : (params.system ?? "");
   const turns: CoachRun["transcript"] = [{ role: "system", content: system }];
   for (const message of params.messages) {
