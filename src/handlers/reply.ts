@@ -109,7 +109,7 @@ export async function handleReply(request: Request, deps: Deps): Promise<Respons
     const limit = await checkDailyLimits(deps.store(), auth.subject, deps.config, deps.now());
     if (!limit.ok) return reject("rate_limited", limit.scope, limit.retryAfter);
 
-    return await streamReply(deps, buildCoachParams(parsed.request, auth.subject), log, fields, started);
+    return await streamReply(deps, buildCoachParams(parsed.request), log, fields, started);
   } catch {
     return reject("server_error");
   }

@@ -110,11 +110,15 @@ export function buildMessages(request: CoachRequest): BetaMessageParam[] {
 }
 
 /**
- * The full streaming request for `request`. `userId` is an opaque hash of the
- * device's key id, so Anthropic can tell devices apart for abuse handling
- * without learning anything about the person.
+ * The full streaming request for `request`.
+ *
+ * Deliberately no `metadata.user_id`: Anthropic keeps inputs and outputs for
+ * up to 30 days, and a stable per-device id alongside the week's Health data
+ * would make that data "linked to the user" for Steady's App Privacy label.
+ * Without it, what Anthropic holds isn't tied to any identifier. Adding one
+ * back means answering "Linked to you" in App Store Connect first.
  */
-export function buildCoachParams(request: CoachRequest, userId: string): BetaMessageStreamParams {
+export function buildCoachParams(request: CoachRequest): BetaMessageStreamParams {
   const params: BetaMessageStreamParams = {
     model: MODEL,
     max_tokens: MAX_TOKENS[request.kind],
@@ -123,7 +127,6 @@ export function buildCoachParams(request: CoachRequest, userId: string): BetaMes
     messages: buildMessages(request),
     betas: [FALLBACK_BETA],
     fallbacks: "default",
-    metadata: { user_id: userId },
   };
   // Chats and the weekly session resend a growing conversation every turn,
   // a minute or so apart: automatic caching lets each request read the

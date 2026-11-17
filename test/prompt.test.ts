@@ -41,7 +41,7 @@ const systemText = (request: CoachRequest) => buildSystem(request).map((b) => b.
 
 describe("Opus 5.5 settings", () => {
   test.each([chat, weekly, summary])("$kind: model, effort, max_tokens, fallback, no sampling or thinking", (request) => {
-    const params = buildCoachParams(request, "abc123");
+    const params = buildCoachParams(request);
     expect(params.model).toBe(MODEL);
     expect(MODEL).toBe("claude-opus-5-5");
     expect(params.output_config).toEqual({ effort: "low" });
@@ -49,7 +49,9 @@ describe("Opus 5.5 settings", () => {
     expect(params.betas).toEqual([FALLBACK_BETA]);
     expect(FALLBACK_BETA).toBe("server-side-fallback-2026-07-01");
     expect(params.fallbacks).toBe("default");
-    expect(params.metadata).toEqual({ user_id: "abc123" });
+    // No per-device id goes to Anthropic, so the data it keeps isn't linked to anyone
+    // (App Privacy label: "Not linked to you").
+    expect(params).not.toHaveProperty("metadata");
     // Thinking can't be disabled on Opus 5.5; left out, it runs adaptive.
     expect(params).not.toHaveProperty("thinking");
     for (const field of ["temperature", "top_p", "top_k", "stop_sequences", "tools"]) {
@@ -58,9 +60,9 @@ describe("Opus 5.5 settings", () => {
   });
 
   test("chat and weekly use automatic caching for the conversation; a summary doesn't", () => {
-    expect(buildCoachParams(chat, "k").cache_control).toEqual({ type: "ephemeral" });
-    expect(buildCoachParams(weekly, "k").cache_control).toEqual({ type: "ephemeral" });
-    expect(buildCoachParams(summary, "k")).not.toHaveProperty("cache_control");
+    expect(buildCoachParams(chat).cache_control).toEqual({ type: "ephemeral" });
+    expect(buildCoachParams(weekly).cache_control).toEqual({ type: "ephemeral" });
+    expect(buildCoachParams(summary)).not.toHaveProperty("cache_control");
   });
 });
 
@@ -84,7 +86,7 @@ describe("system", () => {
 
   test.each([chat, weekly, summary])("$kind: the person's text never reaches the system prompt", (request) => {
     expect(systemText(request)).not.toContain(secret);
-    expect(JSON.stringify(buildCoachParams(request, "k").system)).not.toContain(secret);
+    expect(JSON.stringify(buildCoachParams(request).system)).not.toContain(secret);
   });
 });
 
